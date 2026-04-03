@@ -138,8 +138,8 @@ const genericLogin = async (req, res, requiredRole = null) => {
 
   res.cookie("jwt", refreshToken, {
     httpOnly: true,
-    secure: false, // Set to false for local development/HTTP
-    sameSite: "Lax",
+    secure: true, // Now required for cross-domain cookies
+    sameSite: "None", // Required for cPanel-to-DigitalOcean communication
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -183,8 +183,8 @@ const GooglePassportCallback = async (req, res) => {
     // Set the refresh token in a secure cookie
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
-      secure: false, // Set to false for local development/HTTP
-      sameSite: "Lax",
+      secure: true, 
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -682,8 +682,8 @@ const logout = (req, res) => {
   if (!cookies?.jwt) return res.sendStatus(204); // No content
   res.clearCookie("jwt", {
     httpOnly: true,
-    sameSite: "Lax",
-    secure: false, // Match the login cookie setting
+    sameSite: "None",
+    secure: true,
   });
   res.json({ message: "Cookie cleared" });
 };
