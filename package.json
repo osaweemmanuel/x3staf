@@ -4,10 +4,12 @@
   "description": "Premium Staffing Platform - Full Stack Command",
   "main": "index.js",
   "scripts": {
-    "start": "npx concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd SERVER && npm run dev",
-    "client": "cd CLIENT && npm run dev",
-    "install-all": "npm install && cd CLIENT && npm install && cd ../SERVER && npm install"
+    "start": "node SERVER/server.js",
+    "build": "cd CLIENT && npm install && npm run build && cp -r build/* ../SERVER/public/",
+    "install-all": "npm install && cd CLIENT && npm install && cd ../SERVER && npm install",
+    "dev": "npx concurrently \"npm run server-dev\" \"npm run client-dev\"",
+    "server-dev": "cd SERVER && npm run dev",
+    "client-dev": "cd CLIENT && npm run dev"
   },
   "dependencies": {
     "concurrently": "^8.2.2"
