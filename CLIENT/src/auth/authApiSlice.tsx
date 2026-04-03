@@ -126,14 +126,16 @@ export const authApiSlice = apiSlice.injectEndpoints({
         url: "/auth/refresh",
         method: "GET",
       }),
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          console.log(arg);
-          const { accessToken } = data;
-          dispatch(setCredentials({ accessToken }));
+          if (data && data.accessToken) {
+             console.log("Refresh successful, updating credentials");
+             dispatch(setCredentials({ accessToken: data.accessToken }));
+          }
         } catch (err) {
-          console.log(err);
+          console.error("Refresh token verification failed:", err);
+          dispatch(logOut());
         }
       },
     }),
