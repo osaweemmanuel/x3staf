@@ -1,0 +1,15 @@
+{
+  "name": "x3-staffing-fullstack",
+  "version": "1.0.0",
+  "description": "Premium Staffing Platform - Full Stack Command",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd SERVER && npm run dev",
+    "client": "cd CLIENT && npm run dev",
+    "install-all": "npm install && cd CLIENT && npm install && cd ../SERVER && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
