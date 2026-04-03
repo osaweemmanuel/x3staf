@@ -59,4 +59,15 @@ router.patch("/batch", async (req, res) => {
   }
 });
 
+// GET timesheets for a specific user
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const timesheets = await Timesheet.findAll({ where: { userId } });
+    res.json(timesheets);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
