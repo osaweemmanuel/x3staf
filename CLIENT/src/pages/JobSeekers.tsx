@@ -21,17 +21,19 @@ export const JobSeekers = () => {
     const fetchMarketplace = async () => {
       try {
         const res = await axios.get(`${REACT_APP_API_URL}/jobs`);
-        setJobs(Array.isArray(res.data) ? res.data : (res.data?.jobs || []));
+        const fetchedJobs = Array.isArray(res.data) ? res.data : (res.data?.jobs || []);
+        console.log(`DEBUG: Jobs Received: ${fetchedJobs.length}`, fetchedJobs);
+        setJobs(fetchedJobs);
       } catch (e) {
-        console.error("Marketplace Offline");
+        console.error("Marketplace Sync Failed:", e);
       } finally { setIsSyncing(false); }
     };
     fetchMarketplace();
   }, []);
 
   const filtered = (jobs || []).filter(j => 
-    j.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    j.address.toLowerCase().includes(searchQuery.toLowerCase())
+    (j.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (j.address || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": " vite",
     "build": "tsc && set VITE_NODE_ENV=prod vite build",
+    "zip": "npm run build && tar -cvf X3_DEPLOYMENT.tar -C build .",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

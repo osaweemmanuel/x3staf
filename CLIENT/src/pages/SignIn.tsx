@@ -11,7 +11,7 @@ import SignUpBg from "../assets/BGengineer.png";
 import GoogleIcon from "../assets/GoogleOriginal.png";
 import toast from "react-hot-toast";
 import { PulseLoader } from "react-spinners";
-import { REACT_APP_API_URL } from "../../constants";
+
 import { setCredentials } from "../auth/authSlice";
 import { useLoginMutation, useCreateNewLinkMutation } from "../auth/authApiSlice";
 import useTitle from "../hooks/useTitle";
@@ -77,7 +77,7 @@ export const SignIn = () => {
     } catch (e) { toast.error("Transmission error."); }
   };
 
-  const GoogleAuth = () => { window.location.href = `${REACT_APP_API_URL}/auth/google`; };
+
 
   return (
     <div className="min-h-screen bg-white flex font-Outfit overflow-hidden relative selection:bg-[#048372]/10">
@@ -128,9 +128,9 @@ export const SignIn = () => {
             <AnimatePresence mode="wait">
                {step === 1 && (
                   <motion.div key="1" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
-                     <button onClick={GoogleAuth} className="w-full py-5 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-4 hover:border-[#048372] transition-all font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-slate-200/50 group">
+                     <a href="https://lobster-app-c38r5.ondigitalocean.app/auth/google" className="w-full py-5 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-4 hover:border-[#048372] transition-all font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-slate-200/50 group no-underline text-slate-800">
                         <img src={GoogleIcon} className="w-5 grayscale group-hover:grayscale-0 transition-all" alt="G" /> Sign in with X3 Staffing ID
-                     </button>
+                     </a>
                      <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200/50"></div></div><div className="relative flex justify-center"><span className="bg-[#F8FAFC] px-4 text-[9px] font-black text-slate-300 uppercase italic">Or Log In Via Registry Email</span></div></div>
                      <div className="space-y-4">
                         <div className="space-y-2">

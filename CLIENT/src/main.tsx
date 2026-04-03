@@ -8,6 +8,10 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux"; // Import Provider
 import { store } from "./store"; // Import the 'store' object from './store.tsx'
 
+import axios from "axios";
+
+axios.defaults.withCredentials = true;
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <Provider store={store}>
