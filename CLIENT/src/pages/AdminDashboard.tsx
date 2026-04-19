@@ -19,6 +19,18 @@ import { X3Logo } from "../components/X3Logo";
 import { useSendLogoutMutation } from "../auth/authApiSlice";
 import { PulseLoader } from "react-spinners";
 
+const sanitizeText = (text: string) => {
+  if (!text) return "";
+  return text
+    .replace(/###/g, '')
+    .replace(/\?\?/g, '')
+    .replace(/\*\*\*/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/\?/g, '')
+    .trim();
+};
+
 export const AdminDashboard = () => {
   const { username } = useAuth();
   const navigate = useNavigate();
@@ -68,6 +80,7 @@ export const AdminDashboard = () => {
     employmentType: "Full-time", minimumExperience: 0, province: "Ontario", 
     description: "", requirements: "", closingDate: "", jobCategory: "External" 
   });
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [jobPage, setJobPage] = useState(1);
   const JOBS_PER_PAGE = 6;
@@ -226,6 +239,44 @@ export const AdminDashboard = () => {
   const activeApps = applications.filter(app => app.status !== 'Rejected');
   const activeTimesheets = timesheets.filter(t => t.status !== 'Rejected');
 
+  // 🔍 SHARED SEARCH FILTERING
+  const filteredJobs = activeJobs.filter(j => 
+    j.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    j.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    j.department?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredUsers = users.filter(u => 
+    u.username?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredApps = activeApps.filter(a => 
+    a.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    a.Job?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredTimesheets = activeTimesheets.filter(t => {
+    const user = users.find(u => u.id === t.userId);
+    return user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           t.weekEnding?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const filteredKyc = kycDocs.filter(k => {
+     const user = users.find(u => u.id === k.userId);
+     return k.status === 'Pending' && (
+        user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        k.documentType?.toLowerCase().includes(searchTerm.toLowerCase())
+     );
+  });
+
+  // 📊 DYNAMIC RECRUITMENT FLOW STATS
+  const intakeRate = jobs.length > 0 ? Math.round((applications.length / (jobs.length * 5)) * 100) : 0;
+  const verificationRate = users.length > 0 ? Math.round((kycDocs.filter(k => k.status === 'Verified').length / users.length) * 100) : 0;
+  const auditRate = timesheets.length > 0 ? Math.round((timesheets.filter(t => t.status === 'Approved').length / timesheets.length) * 100) : 0;
+
+  const spotlightUser = users.find(u => u.active) || users[0];
+
   return (
     <div className="min-h-screen bg-[#F1F5F9] flex font-Outfit selection:bg-[#048372]/20 text-slate-900">
       {/* 🧭 NAVIGATION SIDEBAR (DARK PROTOCOL) */}
@@ -290,6 +341,8 @@ export const AdminDashboard = () => {
                   <input 
                     type="text" 
                     placeholder="Search administrative vault..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[11px] font-bold outline-none focus:ring-2 ring-[#048372]/10 transition-all font-sans italic"
                   />
                   <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -307,10 +360,10 @@ export const AdminDashboard = () => {
          {/* DASH UI CORE VIEW */}
          <div className="flex-grow overflow-y-auto">
             {/* 🟦 VIBRANT HERO BAR (COMPANY TEAL) */}
-            <div className="relative px-6 lg:px-10 pt-10 lg:pt-12 pb-32 lg:pb-40 overflow-hidden bg-[#0F172A]">
-               <img src="/admin_dashboard_bg.png" className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none grayscale brightness-50 contrast-125 transition-all duration-700" />
-               <div className="absolute inset-0 bg-gradient-to-tr from-[#0F172A] via-[#048372]/30 to-transparent pointer-events-none"></div>
-               <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent pointer-events-none"></div>
+            <div className="relative px-6 lg:px-12 pt-12 lg:pt-16 pb-36 lg:pb-48 overflow-hidden bg-[#0F172A] border-b border-white/5">
+               <img src="/admin_dashboard_bg.png" className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none grayscale brightness-50 contrast-125 transition-all duration-700" />
+               <div className="absolute inset-0 bg-gradient-to-tr from-[#0F172A] via-[#048372]/10 to-transparent pointer-events-none"></div>
+               <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent pointer-events-none"></div>
                
                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                   <div>
@@ -362,12 +415,12 @@ export const AdminDashboard = () => {
                                       <div className="p-2 space-y-6">
                                          <div>
                                             <p className="px-6 py-5 text-sm font-black text-[#048372] uppercase tracking-[0.2em] italic border-b border-slate-50">{t.flux}</p>
-                                            {jobs.filter(j => !j.closingDate || new Date(j.closingDate) >= new Date()).slice(0, 4).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)}
+                                            {filteredJobs.slice(0, 4).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)}
                                          </div>
                                          <div>
                                             <p className="px-6 py-5 text-sm font-black text-[#AECF5A] uppercase tracking-[0.2em] italic border-b border-slate-50">{t.identity}</p>
                                             <div className="divide-y divide-slate-100">
-                                               {kycDocs.filter(k => k.status === 'Pending').slice(0, 3).map(k => (
+                                               {filteredKyc.slice(0, 3).map(k => (
                                                   <div key={k.id} className="p-4 hover:bg-slate-50 flex items-center justify-between group cursor-pointer" onClick={() => setSelectedKYC(k)}>
                                                      <div className="flex items-center gap-4">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-[#048372]"><FontAwesomeIcon icon={faIdCard} size="sm" /></div>
@@ -394,7 +447,7 @@ export const AdminDashboard = () => {
                                                    </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                   {users.slice(0, 8).map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
+                                                   {filteredUsers.slice(0, 8).map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
                                                 </tbody>
                                              </table>
                                           </div>
@@ -413,7 +466,7 @@ export const AdminDashboard = () => {
                                           </tr>
                                        </thead>
                                        <tbody className="divide-y divide-slate-100">
-                                          {activeApps.map(app => (
+                                          {filteredApps.map(app => (
                                              <tr key={app.id} className="hover:bg-slate-50 transition-all font-sans italic">
                                                 <td className="px-6 py-6">
                                                    <div className="flex items-center gap-4">
@@ -443,7 +496,7 @@ export const AdminDashboard = () => {
                                                 </td>
                                              </tr>
                                           ))}
-                                          {activeApps.length === 0 && <tr><td colSpan={4} className="py-40 text-center uppercase tracking-[0.4em] text-slate-300 italic font-black font-sans">Handshake Registry Neutral</td></tr>}
+                                          {filteredApps.length === 0 && <tr><td colSpan={4} className="py-20 text-center uppercase tracking-[0.4em] text-slate-300 italic font-black font-sans opacity-40">Handshake_Registry_Neutral</td></tr>}
                                        </tbody>
                                     </table>
                                  </div>
@@ -460,7 +513,7 @@ export const AdminDashboard = () => {
                                           </tr>
                                        </thead>
                                        <tbody className="divide-y divide-slate-100">
-                                          {users.map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
+                                          {filteredUsers.map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
                                        </tbody>
                                     </table>
                                  </div>
@@ -476,7 +529,7 @@ export const AdminDashboard = () => {
                                           </tr>
                                        </thead>
                                        <tbody className="divide-y divide-slate-100">
-                                          {users.map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
+                                          {filteredUsers.map(u => <UserRow key={u.id} user={u} onViewMemo={() => viewCand(u.id)} onToggleStatus={() => handleToggleStatus(u)} />)}
                                        </tbody>
                                     </table>
                                  </div>
@@ -493,19 +546,19 @@ export const AdminDashboard = () => {
                                           </tr>
                                        </thead>
                                        <tbody className="divide-y divide-slate-100">
-                                          {activeTimesheets.map(t => <TimesheetRow key={t.id} t={t} user={users.find(u => u.id === t.userId)} onAudit={() => setSelectedTimesheet(t)} />)}
-                                          {activeTimesheets.length === 0 && <tr><td colSpan={4} className="py-40 text-center uppercase tracking-[0.4em] text-slate-300 italic font-black font-sans">Ledger Registry Neutral</td></tr>}
+                                          {filteredTimesheets.map(t => <TimesheetRow key={t.id} t={t} user={users.find(u => u.id === t.userId)} onAudit={() => setSelectedTimesheet(t)} />)}
+                                          {filteredTimesheets.length === 0 && <tr><td colSpan={4} className="py-20 text-center uppercase tracking-[0.4em] text-slate-300 italic font-black font-sans opacity-40">Ledger_Registry_Neutral</td></tr>}
                                        </tbody>
                                     </table>
                                  </div>
                                ) :
                                activeTab === "Internal" ? (
-                                  activeJobs.filter(j => j.jobCategory === 'Internal').slice((jobPage - 1) * JOBS_PER_PAGE, jobPage * JOBS_PER_PAGE).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
+                                  filteredJobs.filter(j => j.jobCategory === 'Internal').slice((jobPage - 1) * JOBS_PER_PAGE, jobPage * JOBS_PER_PAGE).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
                                ) :
                                activeTab === "External" ? (
-                                  activeJobs.filter(j => j.jobCategory === 'External').slice((jobPage - 1) * JOBS_PER_PAGE, jobPage * JOBS_PER_PAGE).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
+                                  filteredJobs.filter(j => j.jobCategory === 'External').slice((jobPage - 1) * JOBS_PER_PAGE, jobPage * JOBS_PER_PAGE).map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
                                ) : (
-                                  activeJobs.map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
+                                  filteredJobs.map(j => <JobCard key={j.id} job={j} apps={applications.filter(a => a.jobId === j.id)} onAudit={() => { setSelectedJobApps(applications.filter(a => a.jobId === j.id)); setSelectedJobContext(j); }} onView={() => setViewingJob(j)} onDelete={() => handleDeleteJob(j.id)} />)
                                )
                             )}
 
@@ -553,9 +606,9 @@ export const AdminDashboard = () => {
                         
                         <div className="space-y-6">
                            {[
-                              { label: 'Marketplace Intake', val: '84%', color: '#048372' },
-                              { label: 'Personnel Verification', val: '62%', color: '#AECF5A' },
-                              { label: 'Legitimacy Audit', val: '41%', color: '#0F172A' }
+                              { label: 'Marketplace Intake', val: `${intakeRate}%`, color: '#048372' },
+                              { label: 'Personnel Verification', val: `${verificationRate}%`, color: '#AECF5A' },
+                              { label: 'Legitimacy Audit', val: `${auditRate}%`, color: '#0F172A' }
                            ].map((s, i) => (
                               <div key={i}>
                                  <div className="flex justify-between text-sm font-bold uppercase tracking-widest mb-2 italic font-sans">
@@ -574,15 +627,15 @@ export const AdminDashboard = () => {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#AECF5A]/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-[#AECF5A]/20 transition-all"></div>
                         <h3 className="text-sm font-bold text-[#AECF5A] uppercase tracking-[0.4em] mb-6 font-sans italic">Personnel Spotlight</h3>
                         
-                        {users.slice(0, 1).map(u => (
-                           <div key={u.id} className="relative z-10 flex items-center gap-4">
-                              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-xl font-black border border-white/20 shadow-inner italic uppercase">{u.username?.charAt(0)}</div>
+                        {spotlightUser && (
+                           <div key={spotlightUser.id} className="relative z-10 flex items-center gap-4">
+                              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-xl font-black border border-white/20 shadow-inner italic uppercase">{spotlightUser.username?.charAt(0)}</div>
                               <div>
-                                 <p className="text-sm font-black uppercase italic tracking-tight font-sans">{u.username}</p>
+                                 <p className="text-sm font-black uppercase italic tracking-tight font-sans">{spotlightUser.username}</p>
                                  <p className="text-xs font-bold text-[#AECF5A] uppercase tracking-widest opacity-60">Verified Asset Hub</p>
                               </div>
                            </div>
-                        ))}
+                        )}
                         
                         <button onClick={() => setActiveTab('UpdateProfile')} className="w-full py-4 mt-8 bg-white/5 border border-white/10 rounded-xl text-sm font-black uppercase tracking-[0.3em] hover:bg-[#AECF5A] hover:text-[#1E293B] hover:border-[#AECF5A] transition-all italic font-sans">View Full Directory</button>
                      </div>
@@ -621,37 +674,39 @@ export const AdminDashboard = () => {
 /* --- SHARED ADMINISTRATIVE COMPONENTS --- */
 
 const X3Stat = ({ label, val, trend, trendUp, icon }: any) => (
-  <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden group hover:translate-y-[-4px] transition-all cursor-default hover:shadow-lg hover:border-[#048372]/30">
-     <div className="flex justify-between items-start mb-6 relative z-10">
-        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 group-hover:bg-[#048372]/10 group-hover:text-[#048372] transition-all border border-slate-100 shadow-inner">
-           <FontAwesomeIcon icon={icon || faInfoCircle} size="lg" />
+  <div className="bg-white border border-slate-200/60 rounded-xl p-6 shadow-[0_2px_4px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:border-[#048372]/30 transition-all duration-500">
+     <div className="flex justify-between items-start mb-6">
+        <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-[#048372] group-hover:text-white transition-all duration-500 border border-slate-100/50">
+           <FontAwesomeIcon icon={icon || faInfoCircle} size="sm" />
         </div>
-        <span className={`text-xs font-black px-3 py-1.5 rounded-lg uppercase tracking-tight italic border ${trendUp ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-500'}`}>{trend}</span>
+        <span className={`text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest border transition-all ${trendUp === false ? 'bg-rose-50 text-rose-400 border-rose-100' : 'bg-slate-50 text-slate-400 border-slate-100 group-hover:border-[#048372]/20 group-hover:text-[#048372]'}`}>
+           {trend}
+        </span>
      </div>
-     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 italic font-sans">{label}</p>
-     <h3 className="text-3xl font-black text-slate-800 tracking-tighter uppercase font-sans">{val}</h3>
+     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1 font-sans">{label}</p>
+     <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase font-sans">{val}</h3>
   </div>
 );
 
 const UserRow = memo(({ user, onViewMemo, onToggleStatus }: any) => (
-  <tr className="hover:bg-[#F8FAFC] transition-all group">
-     <td className="px-6 py-6">
-        <div className="flex items-center gap-5">
-           <div className={`w-14 h-14 ${user.active ? 'bg-[#048372] text-white shadow-[#048372]/20' : 'bg-slate-200 text-slate-400'} rounded-2xl flex items-center justify-center text-xl font-black border-4 border-white shadow-xl italic transition-all group-hover:scale-110`}>{user.username?.charAt(0) || "U"}</div>
+  <tr className="hover:bg-slate-50/50 transition-all group border-b border-slate-100">
+     <td className="px-6 py-5">
+        <div className="flex items-center gap-4">
+           <div className={`w-10 h-10 ${user.active ? 'bg-[#048372]/10 text-[#048372]' : 'bg-slate-100 text-slate-400'} border border-black/5 rounded-lg flex items-center justify-center text-sm font-black`}>{user.username?.charAt(0) || "U"}</div>
            <div>
-              <p className="text-base font-black text-slate-800 uppercase italic font-sans tracking-tight leading-none mb-2">{user.username}</p>
-              <p className="text-xs text-slate-400 font-bold font-sans italic tracking-widest uppercase">{user.email}</p>
+              <p className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{user.username}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</p>
            </div>
         </div>
      </td>
-     <td className="px-6 py-6">
-        <span className={`text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest border-2 ${user.active ? 'bg-emerald-50 border-emerald-100 text-[#048372]' : 'bg-rose-50 border-rose-100 text-rose-500'}`}>{user.active ? 'Authorized Personnel' : 'Access Suspended'}</span>
+     <td className="px-6 py-5">
+        <span className={`text-[9px] font-black px-3 py-1 rounded-md uppercase tracking-widest border ${user.active ? 'bg-emerald-50 border-emerald-100 text-[#048372]' : 'bg-rose-50 border-rose-100 text-rose-500'}`}>{user.active ? 'Personnel Active' : 'Access Suspended'}</span>
      </td>
-     <td className="px-6 py-6 text-right">
-        <div className="flex justify-end gap-3">
-           <button onClick={onViewMemo} className="px-8 py-3 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#048372] hover:text-white hover:border-[#048372] transition-all font-sans italic shadow-sm">Audit Hub</button>
-           <button onClick={onToggleStatus} className={`w-12 h-12 rounded-xl border-2 transition-all flex items-center justify-center ${user.active ? 'border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500' : 'border-emerald-100 text-[#048372] hover:bg-[#048372] hover:text-white hover:border-[#048372]'}`}>
-              <FontAwesomeIcon icon={user.active ? faBan : faCheckCircle} />
+     <td className="px-6 py-5 text-right">
+        <div className="flex justify-end gap-2">
+           <button onClick={onViewMemo} className="px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Audit Hub</button>
+           <button onClick={onToggleStatus} className={`w-9 h-9 rounded-lg border transition-all flex items-center justify-center ${user.active ? 'border-rose-100 text-rose-400 hover:bg-rose-50' : 'border-emerald-100 text-[#048372] hover:bg-emerald-50'}`}>
+              <FontAwesomeIcon icon={user.active ? faBan : faCheckCircle} className="text-xs" />
            </button>
         </div>
      </td>
@@ -659,30 +714,29 @@ const UserRow = memo(({ user, onViewMemo, onToggleStatus }: any) => (
 ));
 
 const JobCard = memo(({ job, apps, onAudit, onView, onDelete }: any) => (
-  <div className="p-6 lg:p-10 hover:bg-[#F8FAFC] flex flex-col lg:flex-row items-start lg:items-center justify-between transition-all group border-l-[4px] lg:border-l-[8px] border-transparent hover:border-[#048372] cursor-default bg-white rounded-2xl lg:rounded-[2.5rem] mb-6 lg:mb-8 shadow-md border border-slate-100/60 relative overflow-hidden">
-     <div className="absolute top-0 right-0 w-32 h-32 bg-[#048372]/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-     <div className="flex flex-col sm:flex-row items-center gap-6 lg:gap-10 relative z-10 w-full lg:w-auto text-center sm:text-left">
-        <div className={`w-16 h-16 lg:w-20 lg:h-20 shrink-0 ${job.jobCategory === 'Internal' ? 'bg-[#AECF5A] text-[#0F172A]' : 'bg-[#048372] text-white'} rounded-2xl lg:rounded-3xl flex items-center justify-center text-2xl lg:text-3xl shadow-2xl border-4 border-white italic font-black transition-all group-hover:rotate-6 group-hover:scale-110`}>{job.title?.charAt(0) || "J" }</div>
+  <div className="p-5 lg:p-6 hover:bg-slate-50/50 flex flex-col lg:flex-row items-start lg:items-center justify-between transition-all group border-l-[3px] border-transparent hover:border-[#048372] bg-white rounded-xl mb-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-slate-200/60">
+     <div className="flex flex-col sm:flex-row items-center gap-5 lg:gap-6 w-full lg:w-auto text-left">
+        <div className={`w-11 h-11 lg:w-12 lg:h-12 shrink-0 ${job.jobCategory === 'Internal' ? 'bg-[#1E293B] text-[#AECF5A]' : 'bg-[#048372] text-white'} rounded-lg flex items-center justify-center text-lg shadow-sm border border-white/10 font-black transition-all group-hover:scale-105`}>{job.title?.charAt(0) || "J" }</div>
         <div className="flex-grow">
-           <div className="flex flex-wrap items-center gap-5 mb-4">
-              <h4 className="text-2xl font-black text-slate-800 uppercase italic leading-tight font-sans tracking-tighter">{job.title}</h4>
-              <span className={`text-xs font-black px-5 py-2 rounded-full border-2 uppercase tracking-widest ${job.jobCategory === 'Internal' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-emerald-50 border-emerald-100 text-[#048372]'}`}>
-                 {job.jobCategory === 'Internal' ? 'Elite Staff Career' : 'Marketplace Sync Flux'}
+           <div className="flex flex-wrap items-center gap-3 mb-1.5">
+              <h4 className="text-base font-black text-slate-900 uppercase tracking-tight font-sans leading-none">{job.title}</h4>
+              <span className={`text-[8px] font-black px-2 py-0.5 rounded border uppercase tracking-widest ${job.jobCategory === 'Internal' ? 'bg-[#1E293B] text-[#AECF5A] border-white/10' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                 {job.jobCategory === 'Internal' ? 'Internal' : 'External Hub'}
               </span>
            </div>
-           <div className="flex flex-wrap gap-8 items-center">
-              <p className="text-base font-bold text-slate-400 uppercase tracking-widest italic font-sans flex items-center gap-3 underline decoration-slate-100 underline-offset-4"><FontAwesomeIcon icon={faLocationArrow} className="text-[#048372]" /> {job.address}</p>
-              <div className="flex items-center gap-4 bg-slate-50 px-6 py-2.5 rounded-full border border-slate-100 shadow-inner">
-                 <div className="w-3 h-3 rounded-full bg-[#048372] animate-pulse"></div>
-                 <span className="text-xs font-black text-[#048372] uppercase tracking-[0.2em] italic">{apps?.length || 0} Prospective Audits</span>
+           <div className="flex flex-wrap gap-5 items-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans flex items-center gap-2"><FontAwesomeIcon icon={faLocationArrow} className="text-[#048372]/40" /> {job.address}</p>
+              <div className="flex items-center gap-2.5 bg-slate-50/50 px-3 py-1 rounded border border-slate-100">
+                 <div className="w-1 h-1 rounded-full bg-[#048372]/40 group-hover:bg-[#048372] transition-colors"></div>
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{apps?.length || 0} Synced Records</span>
               </div>
            </div>
         </div>
      </div>
-     <div className="flex items-center gap-3 lg:gap-5 mt-8 lg:mt-0 w-full lg:w-auto relative z-10">
-        <button onClick={onView} className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl bg-white text-slate-300 hover:text-[#048372] hover:bg-white hover:shadow-xl transition-all border-2 border-slate-100 flex items-center justify-center group/btn"><FontAwesomeIcon icon={faEye} size="lg" className="group-hover/btn:scale-125 transition-transform" /></button>
-        <button onClick={onAudit} className="flex-grow lg:flex-none px-6 lg:px-12 py-4 lg:py-5 bg-[#048372] text-white rounded-xl lg:rounded-3xl text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] lg:tracking-[0.4em] shadow-2xl shadow-[#048372]/30 italic transition-all active:scale-95 font-sans border-b-4 lg:border-b-8 border-[#036e60] hover:brightness-110 hover:translate-y-[-2px]">Perform Audit</button>
-        <button onClick={onDelete} className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl bg-white text-rose-300 hover:text-rose-500 hover:bg-rose-50 hover:shadow-xl transition-all border-2 border-slate-100 flex items-center justify-center group/del"><FontAwesomeIcon icon={faBan} size="lg" className="group-hover/del:rotate-90 transition-transform" /></button>
+     <div className="flex items-center gap-2 mt-5 lg:mt-0 w-full lg:w-auto shrink-0">
+        <button onClick={onView} className="w-9 h-9 rounded-lg bg-white text-slate-300 hover:text-[#048372] hover:border-[#048372]/30 transition-all border border-slate-200 flex items-center justify-center"><FontAwesomeIcon icon={faEye} size="xs" /></button>
+        <button onClick={onAudit} className="flex-grow lg:flex-none px-6 py-2.5 bg-[#048372] text-white rounded-lg text-[9px] font-black uppercase tracking-[0.2em] shadow-md shadow-[#048372]/5 transition-all active:scale-95 font-sans hover:brightness-105">Audit Profile</button>
+        <button onClick={onDelete} className="w-9 h-9 rounded-lg bg-white text-slate-300 hover:text-rose-500 hover:border-rose-200 transition-all border border-slate-200 flex items-center justify-center"><FontAwesomeIcon icon={faBan} size="xs" /></button>
      </div>
   </div>
 ));
@@ -771,7 +825,11 @@ const JobModal = ({ job, close }: any) => (
               <div className="flex justify-between border-b border-slate-200 pb-2"><span>Operational Site:</span> <span className="text-[#048372]">{job.address}</span></div>
               <div className="flex justify-between"><span>Revenue Profile:</span> <span className="text-[#048372]">{job.compensation}</span></div>
            </div>
-           <p className="text-slate-400 leading-relaxed text-xs italic font-sans">{job.description || "No metadata found in registry."}</p>
+           <div className="max-h-[300px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-[#048372]/20">
+              <p className="text-slate-600 leading-relaxed text-xs font-semibold whitespace-pre-line font-sans">
+                 {sanitizeText(job.description || "No metadata found in registry.")}
+              </p>
+           </div>
         </div>
      </motion.div>
   </div>

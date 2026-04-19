@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   faSearch, faBriefcase, faLocationArrow, faMoneyBillWave, 
-  faRotate, faShieldHalved
+  faRotate, faShieldHalved, faUsers, faTruckMoving, faBolt
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
@@ -16,6 +16,27 @@ export const JobSeekers = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // 🛡️ Icon Mapping Registry for Professional Persona
+  const getJobIcon = (dept: string, title: string) => {
+    const d = (dept || "").toLowerCase();
+    const t = (title || "").toLowerCase();
+    if (d.includes('skilled') || t.includes('electrician') || t.includes('plumber')) return faBolt;
+    if (d.includes('management') || t.includes('coordinator')) return faUsers;
+    if (d.includes('heavy') || t.includes('operator')) return faTruckMoving;
+    return faBriefcase;
+  };
+
+  const sanitizeText = (text: string) => {
+    if (!text) return "";
+    return text
+      .replace(/###/g, '')
+      .replace(/\?\?/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/\?/g, '')
+      .trim();
+  };
 
   useEffect(() => {
     const fetchMarketplace = async () => {
@@ -86,8 +107,20 @@ export const JobSeekers = () => {
                         </span>
                         <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#048372] transition-colors leading-tight italic font-sans italic">{job.title}</h3>
                      </div>
-                     <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-[#048372]/40 text-sm font-bold opacity-0 group-hover:opacity-100 group-hover:bg-[#048372] group-hover:text-white transition-all italic">
-                        <FontAwesomeIcon icon={faBriefcase} />
+                     <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-[#048372] text-lg font-bold shadow-sm group-hover:bg-[#048372] group-hover:text-white transition-all transform group-hover:rotate-6">
+                        <FontAwesomeIcon icon={getJobIcon(job.department, job.title)} />
+                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-6">
+                     <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 italic">
+                        <FontAwesomeIcon icon={faLocationArrow} className="text-[#048372]/40" />
+                        <span>{job.address}</span>
+                     </div>
+                     <div className="h-1 w-1 rounded-full bg-slate-200"></div>
+                     <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 italic">
+                        <FontAwesomeIcon icon={faBriefcase} className="text-[#AECF5A]/40" />
+                        <span>{job.department}</span>
                      </div>
                   </div>
 
@@ -103,20 +136,29 @@ export const JobSeekers = () => {
                         </div>
                      </div>
 
-                     <div className="bg-slate-50/50 rounded-xl p-4 space-y-3">
+                     <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
                         <div>
-                           <p className="text-[9px] font-black text-[#048372] uppercase tracking-[0.2em] mb-1 italic">Core Assignment Mission</p>
-                           <p className="text-[11px] text-slate-600 leading-relaxed italic font-medium">
-                              {job.description}
+                           <p className="text-[10px] font-black text-[#048372] uppercase tracking-[0.2em] mb-2 italic flex items-center gap-2">
+                              <span className="w-4 h-[1px] bg-[#048372]/20"></span> Core Assignment Mission
+                           </p>
+                           <p className="text-[11px] text-slate-600 leading-relaxed italic font-medium line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
+                              {sanitizeText(job.description || "")}
                            </p>
                         </div>
                         
                         {job.requirements && (
-                           <div className="pt-3 border-t border-slate-200/50">
-                              <p className="text-[9px] font-black text-[#AECF5A] uppercase tracking-[0.2em] mb-1 italic">Professional Requirements</p>
-                              <div className="text-[10.5px] text-slate-500 leading-normal italic line-clamp-3 font-sans">
-                                 {job.requirements.split('\n').map((req: string, idx: number) => (
-                                    <span key={idx} className="block">{req}</span>
+                           <div className="pt-4 border-t border-slate-200/40">
+                              <p className="text-[10px] font-black text-[#AECF5A] uppercase tracking-[0.2em] mb-3 italic flex items-center gap-2">
+                                 <span className="w-4 h-[1px] bg-[#AECF5A]/40"></span> Professional Requirements
+                              </p>
+                              <div className="space-y-1.5 font-sans">
+                                 {sanitizeText(job.requirements).split('\n').slice(0, 4).map((req: string, idx: number) => (
+                                    req.trim() && (
+                                       <div key={idx} className="flex items-start gap-2 text-[10.5px] text-slate-500 font-medium italic">
+                                          <div className="w-1 h-1 rounded-full bg-[#AECF5A] mt-1.5 shrink-0" />
+                                          <span>{req.trim()}</span>
+                                       </div>
+                                    )
                                  ))}
                               </div>
                            </div>
@@ -130,18 +172,21 @@ export const JobSeekers = () => {
                      </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
+                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
                      <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 opacity-60 italic font-sans">Remuneration</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-60 italic font-sans">Compensation Registry</p>
                         <p className="text-sm font-black text-slate-900 flex items-center gap-2 italic">
-                           <FontAwesomeIcon icon={faMoneyBillWave} className="text-[#048372]/60" /> {job.compensation}
+                           <FontAwesomeIcon icon={faMoneyBillWave} className="text-[#048372] text-xs" />
+                           <span className="px-2 py-0.5 bg-[#048372]/5 text-[#048372] rounded text-xs border border-[#048372]/10 uppercase font-black">
+                              {job.compensation}
+                           </span>
                         </p>
                      </div>
                      <button 
                         onClick={() => navigate(isLoggedIn ? '/jobopenings' : '/signin')} 
-                        className="px-6 py-3 bg-[#048372] text-white rounded-xl font-bold uppercase text-[10px] tracking-widest hover:brightness-110 active:scale-95 transition-all italic font-sans italic"
+                        className="px-8 py-3.5 bg-[#048372] text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-[#048372]/20 hover:shadow-[#048372]/40 hover:brightness-110 active:scale-95 transition-all italic font-sans"
                      >
-                        {isLoggedIn ? "Apply" : "Sign In"}
+                        {isLoggedIn ? "Dispatch Apply" : "Sign In & Apply"}
                      </button>
                   </div>
                </motion.div>

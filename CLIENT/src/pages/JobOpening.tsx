@@ -4,7 +4,7 @@ import {
   faSearch, faBriefcase, faLocationArrow, faMoneyBillWave, 
   faRotate, faChevronRight, faChartLine, faWallet, faUsers, faEnvelope, 
   faFileLines, faUserTie, faArrowRightFromBracket, faCheck,
-  faChevronLeft, faFileUpload, faTimes
+  faChevronLeft, faFileUpload, faTimes, faTruckMoving, faBolt
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
@@ -58,6 +58,27 @@ export const JobOpening = () => {
   const [workEligibility, setWorkEligibility] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // 🛡️ Icon Mapping Registry for Professional Persona
+  const getJobIcon = (dept: string, title: string) => {
+    const d = (dept || "").toLowerCase();
+    const t = (title || "").toLowerCase();
+    if (d.includes('skilled') || t.includes('electrician') || t.includes('plumber')) return faBolt;
+    if (d.includes('management') || t.includes('coordinator')) return faUsers;
+    if (d.includes('heavy') || t.includes('operator')) return faTruckMoving;
+    return faBriefcase;
+  };
+
+  const sanitizeText = (text: string) => {
+    if (!text) return "";
+    return text
+      .replace(/###/g, '')
+      .replace(/\?\?/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/\?/g, '')
+      .trim();
+  };
 
   useEffect(() => {
     if (userId) fetchHandshake(currentPage);
@@ -287,8 +308,8 @@ export const JobOpening = () => {
                           className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 group hover:border-[#048372] transition-all hover:shadow-xl hover:shadow-[#048372]/5 flex flex-col font-sans italic"
                         >
                            <div className="flex justify-between items-start mb-6 font-sans italic">
-                              <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-[#048372] text-xl border border-slate-100 group-hover:bg-[#048372] group-hover:text-white transition-all shadow-inner uppercase font-bold italic font-sans italic">
-                                 {job.title?.charAt(0) || "X"}
+                              <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-[#048372] text-xl font-bold shadow-sm group-hover:bg-[#048372] group-hover:text-white transition-all transform group-hover:rotate-6">
+                                 <FontAwesomeIcon icon={getJobIcon(job.department || "", job.title || "")} />
                               </div>
                               <div className="flex flex-col items-end">
                                  <span className="text-[10px] font-black text-[#AECF5A] px-2 py-0.5 rounded-md uppercase tracking-tight italic bg-[#AECF5A]/10 border border-[#AECF5A]/20">Active Epoch</span>
@@ -318,16 +339,23 @@ export const JobOpening = () => {
                                <div className="group/desc">
                                   <p className="text-[10px] font-black text-[#048372] uppercase tracking-[0.2em] mb-2 italic opacity-60 font-sans italic">Registry Description</p>
                                   <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic line-clamp-3 group-hover:line-clamp-none transition-all duration-500 font-sans italic">
-                                     {job.description || "The industry-leading platform criteria for this role is currently in the high-fidelity registry matching phase."}
+                                     {sanitizeText(job.description || "The industry-leading platform criteria for this role is currently in the high-fidelity registry matching phase.")}
                                   </p>
                                 </div>
                                 
                                 {job.requirements && (
                                    <div className="pt-4 border-t border-slate-100 italic font-sans italic">
-                                      <p className="text-[10px] font-black text-[#AECF5A] uppercase tracking-[0.2em] mb-2 italic opacity-80 font-sans italic">Operational Requirements</p>
-                                      <p className="text-[11px] text-slate-500 font-medium italic line-clamp-2 leading-relaxed font-sans italic">
-                                         {job.requirements}
-                                      </p>
+                                       <p className="text-[10px] font-black text-[#AECF5A] uppercase tracking-[0.2em] mb-3 italic opacity-80 font-sans italic">Operational Requirements</p>
+                                       <div className="space-y-1.5 font-sans">
+                                          {sanitizeText(job.requirements).split('\n').slice(0, 3).map((req: string, idx: number) => (
+                                             req.trim() && (
+                                                <div key={idx} className="flex items-start gap-2 text-[10.5px] text-slate-500 font-medium italic">
+                                                   <div className="w-1 h-1 rounded-full bg-[#AECF5A] mt-1.5 shrink-0" />
+                                                   <span>{req.trim()}</span>
+                                                </div>
+                                             )
+                                          ))}
+                                       </div>
                                    </div>
                                 )}
                             </div>
