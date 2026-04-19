@@ -4,6 +4,7 @@ const Application = require("../models/JobApp");
 const Job = require("../models/Job");
 const UserProfileModel = require("../models/UserProfile");
 const { sendUserDetails, sendSuccessMessage } = require("../helpers/applied");
+const Notification = require("../models/Notification");
 
 // Create a new application (With Document Support)
 async function createApplication(req, res) {
@@ -56,6 +57,13 @@ async function createApplication(req, res) {
     // Send user details and job details via email
     await sendUserDetails(userProfile, jobDetails);
     await sendSuccessMessage(userProfile, jobDetails);
+
+    // 🛡️ Create System Notification for job application
+    await Notification.create({
+      userId,
+      message: `Registry Sync: Your application for "${jobDetails.title}" has been successfully recorded in our personnel database.`,
+      type: 'APPLICATION_CONFIRMED'
+    });
 
     res.status(201).json(application);
   } catch (error) {

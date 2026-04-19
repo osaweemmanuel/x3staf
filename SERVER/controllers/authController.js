@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const Token = require("../models/Token");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
@@ -64,6 +65,13 @@ const register = async (req, res) => {
     });
 
     await sendVerificationEmail(user.email, newOTP);
+
+    // 🛡️ Create System Notification for welcoming the new user
+    await Notification.create({
+      userId: user.id,
+      message: `Welcome to X3 Staffing, ${user.username || 'Personnel'}! Your identity registry has been successfully initialized. Please complete your profile to start applying for jobs.`,
+      type: 'WELCOME'
+    });
 
     console.log("Token and User created:", { token: token.token, userId: user.id });
     return res.status(200).json({

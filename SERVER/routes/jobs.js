@@ -7,6 +7,7 @@ const User = require("../models/User");
 const Application = require("../models/JobApp");
 const { sendAssignmentEmail, sendNewJobEmail } = require("../helpers/applied");
 const { sequelize } = require("../config/database");
+const Notification = require("../models/Notification");
 
 // GET all jobs (Filtered by availability + Server-side Pagination)
 router.get("/", async (req, res) => {
@@ -60,6 +61,14 @@ router.post("/", async (req, res) => {
     const emails = userEmails.map((user) => user.email);
     if (emails.length > 0) {
       await sendNewJobEmail(emails, newJob);
+      
+      // 🛡️ Create System Notifications for the new job
+      const notifications = applicantUserIds.map(uid => ({
+        userId: uid,
+        message: `New Job Opportunity: ${newJob.title}. View the marketplace for details.`,
+        type: 'JOB_ALERT'
+      }));
+      await Notification.bulkCreate(notifications);
     }
     res.status(201).json(newJob);
   } catch (err) {
@@ -129,6 +138,13 @@ router.patch("/:id/assign/:userId", getJob, async (req, res) => {
 
     // Send congratulations email to the user
     await sendAssignmentEmail(user.email, updatedJob);
+
+    // 🛡️ Create System Notification for job assignment
+    await Notification.create({
+      userId: req.params.userId,
+      message: `Congratulations! You have been successfully assigned to the role: ${updatedJob.title}.`,
+      type: 'ASSIGNMENT'
+    });
 
     res.json(updatedJob);
   } catch (err) {
