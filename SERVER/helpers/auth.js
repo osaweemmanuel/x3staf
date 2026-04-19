@@ -2,17 +2,18 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 
 const sendOTPEmail = async (email, token) => {
-
   try {
     let transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.EMAIL_HOST || 'smtp.office365.com',
+      port: 587,
+      secure: false, // TLS
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
       },
       tls: {
-        rejectUnauthorized: false // Keep this for compatibility with some hosting environments
-      },
+        rejectUnauthorized: false
+      }
     });
 
     const htmlTemplate = `
@@ -38,9 +39,7 @@ const sendOTPEmail = async (email, token) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-
     console.log("Email sent:", result);
-
     return "Verification email sent successfully";
   } catch (error) {
     console.error("Error sending email:", error);
@@ -71,27 +70,27 @@ const comparePassword = (password, hash) => {
 const generateRandomToken = () => {
   const min = 100000;
   const max = 999999;
-
   const randomToken = Math.floor(Math.random() * (max - min + 1)) + min;
-
   return randomToken.toString();
 };
 
 const sendVerificationEmail = async (email, token) => {
   try {
-    
     const verificationLink = `${process.env.BASE_URL}/auth/verify-email?token=${token}`;
 
     let transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.EMAIL_HOST || 'smtp.office365.com',
+      port: 587,
+      secure: false, // TLS
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
       },
       tls: {
         rejectUnauthorized: false
-      },
+      }
     });
+
     const htmlTemplate = `
           <html>
           <body style="text-align: center; max-width:100%; font-family: Arial, sans-serif;">
@@ -113,9 +112,7 @@ const sendVerificationEmail = async (email, token) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-
     console.log("Email sent:", result);
-
     return "Verification email sent successfully";
   } catch (error) {
     console.error("Error sending email:", error);
