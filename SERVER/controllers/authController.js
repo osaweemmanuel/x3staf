@@ -73,7 +73,8 @@ const register = async (req, res) => {
   } catch (error) {
     console.error("Registration Error:", error);
     return res.status(500).json({
-      error: "An error occurred during registration. Please try again later.",
+      error: "An error occurred during registration. Email dispatch failed.",
+      details: error.message, // This will show you exactly what is wrong (e.g. "Bad Credentials" or "Timeout")
     });
   }
 };
