@@ -2,15 +2,15 @@ require('dotenv').config();
 const nodemailer = require('nodemailer');
 
 const testEmail = async () => {
-  console.log('Testing Microsoft 365 email sending with:');
+  console.log('Testing Microsoft 365 email sending with Port 25:');
   console.log('Host:', process.env.EMAIL_HOST || 'smtp.office365.com');
   console.log('User:', process.env.SENDER_EMAIL);
-  console.log('Port:', 587);
+  console.log('Port: 25');
 
   let transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.office365.com',
-    port: 587,
-    secure: false, // TLS
+    port: 25,
+    secure: false,
     auth: {
       user: process.env.SENDER_EMAIL,
       pass: process.env.APP_PASSWORD,
@@ -18,13 +18,14 @@ const testEmail = async () => {
     tls: {
       rejectUnauthorized: false
     },
+    connectionTimeout: 10000
   });
 
   const mailOptions = {
     from: process.env.SENDER_EMAIL,
     to: process.env.RECIPIENT_EMAIL || process.env.SENDER_EMAIL,
-    subject: "Microsoft 365 SMTP Test Email",
-    text: "This is a test email from X3 Staffing server using Microsoft 365.",
+    subject: "Microsoft 365 Port 25 Test",
+    text: "Testing Port 25 connectivity.",
   };
 
   try {
@@ -32,7 +33,6 @@ const testEmail = async () => {
     console.log('Email sent successfully:', info.response);
   } catch (error) {
     console.error('Email sending failed:', error);
-    console.log('\nTIP: If you have MFA enabled, ensure you are using an "App Password" not your regular login password.');
   }
 };
 

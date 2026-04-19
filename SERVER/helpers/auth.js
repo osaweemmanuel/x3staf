@@ -5,15 +5,16 @@ const sendOTPEmail = async (email, token) => {
   try {
     let transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.office365.com',
-      port: 587,
-      secure: false, // TLS
+      port: 25, // Trying Port 25 to bypass some host blocks
+      secure: false,
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      connectionTimeout: 10000, // 10 seconds timeout
     });
 
     const htmlTemplate = `
@@ -80,15 +81,16 @@ const sendVerificationEmail = async (email, token) => {
 
     let transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.office365.com',
-      port: 587,
-      secure: false, // TLS
+      port: 25, // Trying Port 25 to bypass some host blocks
+      secure: false,
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      connectionTimeout: 10000, // 10 seconds timeout
     });
 
     const htmlTemplate = `
