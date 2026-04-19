@@ -8,10 +8,7 @@ const testEmail = async () => {
   console.log('Port:', 587);
 
   let transporter = nodemailer.createTransport({
-    pool: true,
-    host: process.env.EMAIL_HOST,
-    port: 465,
-    secure: true,
+    service: 'gmail',
     auth: {
       user: process.env.SENDER_EMAIL,
       pass: process.env.APP_PASSWORD,

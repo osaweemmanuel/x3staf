@@ -5,11 +5,7 @@ const sendOTPEmail = async (email, token) => {
 
   try {
     let transporter = nodemailer.createTransport({
-      pool: true,
-      host:process.env.EMAIL_HOST,
-
-      port: 587,
-      secure: false,
+      service: 'gmail',
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
@@ -87,10 +83,7 @@ const sendVerificationEmail = async (email, token) => {
     const verificationLink = `${process.env.BASE_URL}/auth/verify-email?token=${token}`;
 
     let transporter = nodemailer.createTransport({
-      pool: true,
-      host: process.env.EMAIL_HOST,
-      port: 587,
-      secure: false,
+      service: 'gmail',
       auth: {
         user: process.env.SENDER_EMAIL,
         pass: process.env.APP_PASSWORD,
