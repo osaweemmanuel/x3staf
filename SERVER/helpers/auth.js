@@ -15,9 +15,7 @@ const sendOTPEmail = async (email, token) => {
         pass: process.env.APP_PASSWORD,
       },
       tls: {
-        ciphers: "SSLv3", // Ensure correct SSL/TLS compatibility
-        minVersion: "TLSv1.2", // Force TLS 1.2+
-        rejectUnauthorized: false // (Optional) Bypass SSL verification issues
+        rejectUnauthorized: false // Keep this for compatibility with some hosting environments
       },
     });
 
@@ -98,9 +96,7 @@ const sendVerificationEmail = async (email, token) => {
         pass: process.env.APP_PASSWORD,
       },
       tls: {
-        ciphers: "SSLv3", // Ensure correct SSL/TLS compatibility
-        minVersion: "TLSv1.2", // Force TLS 1.2+
-        rejectUnauthorized: false // (Optional) Bypass SSL verification issues
+        rejectUnauthorized: false
       },
     });
     const htmlTemplate = `

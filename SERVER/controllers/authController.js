@@ -65,13 +65,16 @@ const register = async (req, res) => {
 
     await sendVerificationEmail(user.email, newOTP);
 
-    console.log(token, user);
-    return res.json({
+    console.log("Token and User created:", { token: token.token, userId: user.id });
+    return res.status(200).json({
       status: 200,
-      message: "Registered Successfully",
+      message: "Registered Successfully. Please check your email for verification.",
     });
   } catch (error) {
-    console.log(error);
+    console.error("Registration Error:", error);
+    return res.status(500).json({
+      error: "An error occurred during registration. Please try again later.",
+    });
   }
 };
 
