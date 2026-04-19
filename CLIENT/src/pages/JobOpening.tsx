@@ -469,7 +469,7 @@ export const JobOpening = () => {
                      <div>
                         <p className="text-[10px] font-black uppercase tracking-widest mb-4 italic text-slate-400">1. Work Eligibility (Canada)</p>
                         <div className="grid grid-cols-1 gap-2">
-                           {["Canadian Citizen", "Permanent Resident", "Work Permit", "Other"].map(opt => (
+                           {["Canadian Citizen", "Permanent Resident", "Work Permit"].map(opt => (
                               <button 
                                 key={opt}
                                 onClick={() => setWorkEligibility(opt)}

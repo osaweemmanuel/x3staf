@@ -36,7 +36,7 @@ const JobApp = sequelize.define('JobApp', {
     allowNull: true,
   },
   workEligibility: {
-    type: DataTypes.ENUM("Canadian Citizen", "Permanent Resident", "Work Permit", "Other"),
+    type: DataTypes.ENUM("Canadian Citizen", "Permanent Resident", "Work Permit"),
     allowNull: true,
   },
 }, {

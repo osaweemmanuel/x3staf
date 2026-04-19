@@ -10,6 +10,14 @@ async function createApplication(req, res) {
   try {
     const User = require("../models/User");
     const { userId, jobId, workEligibility } = req.body;
+    
+    // 🛡️ Canadian Compliance Interdiction
+    const validEligibility = ["Canadian Citizen", "Permanent Resident", "Work Permit"];
+    if (!validEligibility.includes(workEligibility)) {
+        return res.status(403).json({ 
+            message: "Application Interdicted: Only candidates with valid Canadian work authorization are eligible for this position." 
+        });
+    }
 
     // Fetch user for name fallback if fullname is not provided
     const user = await User.findByPk(userId);
